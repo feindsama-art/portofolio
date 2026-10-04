@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Portofolio Israel Yoeman Amunau - Mahasiswa Teknik Informatika UNAMIN: Web Development, Machine Learning, Hardware, dan Office." />
+  <meta name="theme-color" content="#090d16" />
+  <title>Israel Yoeman Amunau | Engineering Portfolio</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"Space Grotesk"', 'sans-serif'],
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            metallic: {
+              900: '#090d16',
+              800: '#0f172a',
+              700: '#1e293b',
+              600: '#334155',
+            },
+            electric: {
+              cyan: '#06b6d4',
+              blue: '#3b82f6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 50%, #030712 100%);
+      background-attachment: fixed;
+      color: #f8fafc;
+      overflow-x: hidden;
+    }
+
+    /* ===== Kartu metalik + glassmorphism ===== */
+    .metallic-card {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.85) 100%);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @media (hover: hover) {
+      .metallic-card:hover {
+        border-color: rgba(6, 182, 212, 0.6);
+        box-shadow: 0 0 25px rgba(6, 182, 212, 0.25), inset 0 0 10px rgba(6, 182, 212, 0.1);
+        transform: translateY(-4px);
+      }
+    }
+
+    .electric-text { text-shadow: 0 0 12px rgba(6, 182, 212, 0.6); }
+
+    .electric-button {
+      background: linear-gradient(90deg, #06b6d4 0%, #2563eb 100%);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+      transition: all 0.3s ease;
+    }
+    .electric-button:hover {
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.8);
+      transform: scale(1.02);
+    }
+
+    /* ===== Latar partikel ===== */
+    #lightning-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== Animasi muncul saat scroll ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.show { opacity: 1; transform: translateY(0); }
+
+    /* ===== Kursor mengetik & gradient bergerak ===== */
+    .cursor::after {
+      content: '|';
+      margin-left: 2px;
+      color: #06b6d4;
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .animated-gradient {
+      background-size: 200% auto;
+      animation: shine 5s linear infinite;
+    }
+    @keyframes shine { to { background-position: 200% center; } }
+
+    .nav-link.active { color: #06b6d4; }
+
+    /* =====================================================
+       KARTU KEAHLIAN
+       Dua lapisan ditumpuk di sel grid yang sama:
+       - .skill-front : hanya ikon + judul (tampilan awal)
+       - .skill-back  : judul + deskripsi + bar level (saat hover/ketuk)
+       Tinggi kartu otomatis mengikuti lapisan yang paling tinggi,
+       jadi tidak ada layout yang melompat saat hover.
+       ===================================================== */
+    .skill-card {
+      display: grid;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      outline: none;
+      --c: #06b6d4;                 /* warna level, diisi oleh JavaScript */
+    }
+
+    .skill-front,
+    .skill-back {
+      grid-area: 1 / 1;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    /* Lapisan depan: hanya ikon + judul, di tengah kartu */
+    .skill-front {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .skill-front svg { width: 2rem; height: 2rem; margin-bottom: 0.75rem; }
+    .skill-front h5 { font-size: 1rem; }
+
+    /* Lapisan belakang: tersembunyi dulu */
+    .skill-back {
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+    }
+    .skill-back-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .skill-back-head svg { width: 1.25rem; height: 1.25rem; flex-shrink: 0; }
+
+    /* Bar level */
+    .level-wrap { margin-top: auto; padding-top: 0.5rem; }
+    .level-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      margin-bottom: 0.5rem;
+      color: #94a3b8;
+    }
+    .level-head strong { color: var(--c); font-size: 0.75rem; }
+    .level-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+
+    .seg {
+      position: relative;
+      height: 6px;
+      border-radius: 9999px;
+      background: rgba(51, 65, 85, 0.8);
+      overflow: hidden;
+    }
+    .seg[data-on="true"]::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--c);
+      box-shadow: 0 0 8px var(--c);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.5s ease;
+      transition-delay: inherit;
+    }
+
+    /* Keadaan terbuka: diketuk (HP), fokus keyboard, atau hover (perangkat mouse) */
+    .skill-card.open,
+    .skill-card:focus-visible {
+      border-color: var(--c);
+      box-shadow: 0 0 22px -4px var(--c);
+    }
+    .skill-card.open .skill-front,
+    .skill-card:focus-visible .skill-front { opacity: 0; transform: translateY(-10px); }
+    .skill-card.open .skill-back,
+    .skill-card:focus-visible .skill-back { opacity: 1; transform: translateY(0); }
+    .skill-card.open .seg[data-on="true"]::after,
+    .skill-card:focus-visible .seg[data-on="true"]::after { transform: scaleX(1); }
+
+    @media (hover: hover) {
+      .skill-card:hover {
+        border-color: var(--c);
+        box-shadow: 0 0 22px -4px var(--c);
+      }
+      .skill-card:hover .skill-front { opacity: 0; transform: translateY(-10px); }
+      .skill-card:hover .skill-back { opacity: 1; transform: translateY(0); }
+      .skill-card:hover .seg[data-on="true"]::after { transform: scaleX(1); }
+    }
+
+    /* ===== Timeline pendidikan ===== */
+    .timeline-dot {
+      position: absolute;
+      left: -1.45rem;
+      top: 0.3rem;
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 9999px;
+      background: #06b6d4;
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.8);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .animated-gradient, .cursor::after { animation: none; }
+      .skill-front, .skill-back, .seg::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body class="font-sans antialiased selection:bg-cyan-500 selection:text-black">
+
+  <canvas id="lightning-canvas"></canvas>
+
+  <div class="relative z-10">
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="fixed top-0 left-0 w-full z-50 backdrop-blur-md bg-metallic-900/80 border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-20 flex items-center justify-between">
+        <a href="#" class="font-mono text-lg sm:text-xl font-bold tracking-wider text-white flex items-center gap-2">
+          <i data-lucide="zap" class="text-electric-cyan w-6 h-6"></i>
+          <span>ISRAEL<span class="text-electric-cyan">.DEV</span></span>
+        </a>
+
+        <div class="hidden md:flex items-center gap-8 font-mono text-sm tracking-wide text-slate-300">
+          <a href="#about" class="nav-link hover:text-electric-cyan transition-colors">/ TENTANG</a>
+          <a href="#skills" class="nav-link hover:text-electric-cyan transition-colors">/ KEAHLIAN</a>
+          <a href="#projects" class="nav-link hover:text-electric-cyan transition-colors">/ PROYEK</a>
+          <a href="#contact" class="nav-link hover:text-electric-cyan transition-colors">/ KONTAK</a>
+        </div>
+
+        <button id="menu-btn" class="md:hidden p-2 rounded-lg border border-slate-700 text-slate-200 hover:border-electric-cyan transition-colors" aria-label="Buka menu">
+          <i data-lucide="menu" id="icon-open" class="w-6 h-6"></i>
+          <i data-lucide="x" id="icon-close" class="w-6 h-6 hidden"></i>
+        </button>
+      </div>
+
+      <div id="mobile-menu" class="hidden md:hidden border-t border-slate-800 bg-metallic-900/95">
+        <div class="px-6 py-4 flex flex-col gap-1 font-mono text-sm tracking-wide text-slate-300">
+          <a href="#about" class="nav-link mobile-link py-3 border-b border-slate-800/70">/ TENTANG</a>
+          <a href="#skills" class="nav-link mobile-link py-3 border-b border-slate-800/70">/ KEAHLIAN</a>
+          <a href="#projects" class="nav-link mobile-link py-3 border-b border-slate-800/70">/ PROYEK</a>
+          <a href="#contact" class="nav-link mobile-link py-3">/ KONTAK</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ================= HERO ================= -->
+    <section class="min-h-screen flex items-center pt-24 md:pt-28 pb-12 md:pb-16 px-4 sm:px-6">
+      <div class="max-w-7xl mx-auto grid lg:grid-cols-12 gap-10 lg:gap-12 items-center w-full">
+
+        <div class="lg:col-span-7 space-y-5 md:space-y-6 order-2 lg:order-1">
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-electric-cyan/30 bg-electric-cyan/10 text-electric-cyan text-[10px] sm:text-xs font-mono">
+            <span class="w-2 h-2 rounded-full bg-electric-cyan animate-pulse flex-shrink-0"></span>
+            SORONG, PAPUA BARAT DAYA • AVAILABLE FOR OPPORTUNITIES
+          </div>
+
+          <h1 class="text-3xl sm:text-4xl md:text-6xl font-bold font-mono tracking-tight leading-tight">
+            ISRAEL YOEMAN AMUNAU<br />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-electric-cyan via-blue-400 to-indigo-400 electric-text animated-gradient">
+              INFORMATICS ENGINEER
+            </span>
+          </h1>
+
+          <p class="font-mono text-base sm:text-lg text-slate-300 h-7">
+            <span class="text-electric-cyan">&gt;</span>
+            <span id="typing" class="cursor"></span>
+          </p>
+
+          <p class="text-slate-300 text-base sm:text-lg max-w-2xl leading-relaxed">
+            Mahasiswa Teknik Informatika Universitas Muhammadiyah Sorong (UNAMIN). Berfokus pada pengembangan website interaktif, penerapan algoritma Machine Learning, perakitan &amp; perawatan hardware, serta memiliki kedisiplinan tinggi.
+          </p>
+
+          <div class="p-4 rounded-xl border border-slate-700/80 bg-metallic-800/60 max-w-lg font-mono text-sm text-electric-cyan flex items-center gap-3">
+            <i data-lucide="quote" class="w-5 h-5 flex-shrink-0 text-electric-cyan"></i>
+            <span>Motto: <strong class="text-white italic">"Hidup Harus Tetap Slay"</strong></span>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 font-mono">
+            <a href="#projects" class="electric-button px-6 py-3.5 rounded-lg font-semibold text-white flex items-center justify-center gap-2">
+              <span>LIHAT PROYEK</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+
+            <a href="https://wa.me/6282397031718" target="_blank" rel="noopener"
+               class="px-6 py-3.5 rounded-lg font-semibold text-slate-200 border border-slate-700 bg-metallic-800/80 hover:border-electric-cyan transition-all flex items-center justify-center gap-2">
+              <i data-lucide="message-square" class="w-4 h-4 text-electric-cyan"></i>
+              <span>HUBUNGI WHATSAPP</span>
+            </a>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 pt-4 max-w-lg font-mono text-center">
+            <div class="metallic-card rounded-xl py-3 px-2">
+              <p class="text-xl sm:text-2xl font-bold text-electric-cyan">ML</p>
+              <p class="text-[10px] sm:text-xs text-slate-400">Random Forest</p>
+            </div>
+            <div class="metallic-card rounded-xl py-3 px-2">
+              <p class="text-xl sm:text-2xl font-bold text-electric-cyan">PC</p>
+              <p class="text-[10px] sm:text-xs text-slate-400">Rakit &amp; Servis</p>
+            </div>
+            <div class="metallic-card rounded-xl py-3 px-2">
+              <p class="text-xl sm:text-2xl font-bold text-electric-cyan">MS</p>
+              <p class="text-[10px] sm:text-xs text-slate-400">Word • Excel • PPT</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 flex justify-center order-1 lg:order-2">
+          <div class="metallic-card p-3 sm:p-4 rounded-2xl relative group w-full max-w-[260px] sm:max-w-sm">
+            <div class="absolute -inset-1 rounded-2xl bg-gradient-to-r from-electric-cyan to-blue-600 opacity-20 blur-xl group-hover:opacity-40 transition-opacity"></div>
+            <div class="relative w-full h-[300px] sm:h-[400px] rounded-xl overflow-hidden border border-slate-700 bg-slate-900">
+              <img src="profile.jpg" alt="Israel Yoeman Amunau"
+                   onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop';"
+                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+
+              <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-5 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent font-mono">
+                <p class="text-white font-bold text-base sm:text-lg">Israel Y. Amunau</p>
+                <p class="text-xs text-electric-cyan">Informatics Engineering @ UNAMIN</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= TENTANG ================= -->
+    <section id="about" class="py-16 md:py-20 px-4 sm:px-6 max-w-7xl mx-auto scroll-mt-16">
+      <div class="text-center max-w-3xl mx-auto mb-10 md:mb-16 reveal">
+        <h2 class="text-xs font-mono text-electric-cyan tracking-widest uppercase mb-2">// 01. PROFIL &amp; LATAR BELAKANG</h2>
+        <h3 class="text-2xl sm:text-3xl font-bold font-mono">Tentang Israel Yoeman Amunau</h3>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-5 md:gap-8">
+
+        <!-- Pendidikan (timeline) -->
+        <div class="metallic-card p-6 rounded-xl reveal md:col-span-2">
+          <div class="flex items-center gap-4 mb-5">
+            <div class="w-12 h-12 rounded-lg bg-electric-cyan/10 border border-electric-cyan/30 flex items-center justify-center text-electric-cyan">
+              <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+            </div>
+            <h4 class="text-lg sm:text-xl font-bold font-mono">Riwayat Pendidikan</h4>
+          </div>
+
+          <div class="relative ml-5 pl-6 border-l border-slate-700 space-y-6">
+            <div class="relative">
+              <span class="timeline-dot"></span>
+              <p class="font-mono text-xs text-electric-cyan">SAAT INI • S1</p>
+              <p class="font-semibold text-white">Teknik Informatika — Universitas Muhammadiyah Sorong (UNAMIN)</p>
+              <p class="text-slate-400 text-sm mt-1">Berfokus pada web development, machine learning, dan perangkat keras.</p>
+            </div>
+
+            <div class="relative">
+              <span class="timeline-dot" style="background:#3b82f6; box-shadow:0 0 10px rgba(59,130,246,.8)"></span>
+              <p class="font-mono text-xs text-blue-400">ALUMNI • SMA</p>
+              <p class="font-semibold text-white">SMA Negeri 3 Kota Sorong</p>
+              <p class="text-slate-400 text-sm mt-1">Jurusan <strong class="text-slate-200">Bahasa dan Budaya</strong>, fondasi kuat untuk komunikasi dan penguasaan bahasa asing.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paskibra -->
+        <div class="metallic-card p-6 rounded-xl reveal">
+          <div class="w-12 h-12 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4">
+            <i data-lucide="award" class="w-6 h-6"></i>
+          </div>
+          <h4 class="text-lg sm:text-xl font-bold font-mono mb-2">Paskibra &amp; Disiplin</h4>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Pengalaman sebagai anggota <strong>Paskibra</strong> membentuk kedisiplinan, ketahanan mental, kepemimpinan, serta kemampuan komunikasi kerja sama tim yang solid.
+          </p>
+        </div>
+
+        <!-- Bahasa -->
+        <div class="metallic-card p-6 rounded-xl reveal md:col-span-3">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="w-12 h-12 flex-shrink-0 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <i data-lucide="languages" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h4 class="text-lg sm:text-xl font-bold font-mono mb-1">Bahasa &amp; Komunikasi</h4>
+              <p class="text-slate-400 text-sm leading-relaxed">
+                Berlatar belakang jurusan Bahasa dan Budaya, saya fasih berbahasa Inggris. Ini memudahkan komunikasi teknis, membaca dokumentasi, menulis kode yang terdokumentasi, dan berkolaborasi secara profesional.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= KEAHLIAN ================= -->
+    <section id="skills" class="py-14 md:py-16 px-4 sm:px-6 max-w-7xl mx-auto border-t border-slate-800 scroll-mt-16">
+      <div class="text-center max-w-3xl mx-auto mb-4 reveal">
+        <h2 class="text-xs font-mono text-electric-cyan tracking-widest uppercase mb-2">// 02. KEAHLIAN UTAMA</h2>
+        <h3 class="text-2xl sm:text-3xl font-bold font-mono">Tech Stack &amp; Skillset</h3>
+      </div>
+
+      <p class="text-center text-xs font-mono text-slate-500 mb-10 md:mb-12 flex items-center justify-center gap-2 reveal">
+        <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
+        <span>Arahkan kursor (atau ketuk di HP) pada kartu untuk melihat detail &amp; tingkat penguasaan</span>
+      </p>
+
+      <!--
+        CARA MENULIS KARTU KEAHLIAN
+        - data-level   : beginner | advanced | expert
+        - <i>          : ikon (nama ikon Lucide) + kelas warnanya saja
+        - <h5>         : judul (tampil di awal)
+        - .skill-desc  : deskripsi (muncul saat hover)
+        - .skill-chips : (opsional) rincian berupa chip (muncul saat hover)
+      -->
+
+      <!-- Kategori 1: Software -->
+      <div class="flex items-center gap-3 mb-5 font-mono reveal">
+        <i data-lucide="code-2" class="w-5 h-5 text-electric-cyan"></i>
+        <h4 class="text-lg font-bold">Software &amp; Pengembangan</h4>
+        <div class="flex-1 h-px bg-slate-800"></div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 font-mono text-sm mb-12">
+        <div class="skill-card metallic-card p-5 rounded-xl border-l-4 border-l-electric-cyan reveal" data-level="advanced" tabindex="0">
+          <i data-lucide="globe" class="text-electric-cyan"></i>
+          <h5 class="font-bold text-white">Web Development</h5>
+          <p class="skill-desc text-xs text-slate-400 mb-3">Pengembangan Website Interaktif &amp; Localhost App</p>
+        </div>
+
+        <div class="skill-card metallic-card p-5 rounded-xl border-l-4 border-l-blue-500 reveal" data-level="advanced" tabindex="0">
+          <i data-lucide="cpu" class="text-blue-400"></i>
+          <h5 class="font-bold text-white">Machine Learning</h5>
+          <p class="skill-desc text-xs text-slate-400 mb-3">Supervised Learning &amp; Algoritma Random Forest</p>
+        </div>
+
+        <div class="skill-card metallic-card p-5 rounded-xl border-l-4 border-l-indigo-500 reveal" data-level="advanced" tabindex="0">
+          <i data-lucide="message-square-code" class="text-indigo-400"></i>
+          <h5 class="font-bold text-white">Fluent English</h5>
+          <p class="skill-desc text-xs text-slate-400 mb-3">Komunikasi Bahasa Inggris Fasih</p>
+        </div>
+
+        <div class="skill-card metallic-card p-5 rounded-xl border-l-4 border-l-emerald-500 reveal" data-level="advanced" tabindex="0">
+          <i data-lucide="shield-check" class="text-emerald-400"></i>
+          <h5 class="font-bold text-white">Leadership</h5>
+          <p class="skill-desc text-xs text-slate-400 mb-3">Kedisiplinan, Manajemen Kerja &amp; Kerja Tim (Paskibra)</p>
+        </div>
+      </div>
+
+      <!-- Kategori 2: Hardware -->
+      <div class="flex items-center gap-3 mb-5 font-mono reveal">
+        <i data-lucide="wrench" class="w-5 h-5 text-electric-cyan"></i>
+        <h4 class="text-lg font-bold">Hardware &amp; Perakitan</h4>
+        <div class="flex-1 h-px bg-slate-800"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 font-mono text-sm mb-12">
+        <!-- Rakit PC -->
+        <div class="skill-card metallic-card p-5 rounded-xl border-l-4 border-l-orange-500 reveal" data-level="advanced" tabindex="0">
+          <i data-lucide="monitor-cog" class="text-orange-400"></i>
+          <h5 class="font-bold text-white">Rakit &amp; Bongkar Pasang PC</h5>
+          <p class="skill-desc text-xs text-slate-400 mb-3">Merakit PC dari nol, memasang komponen, serta membongkar dan menata ulang kabel dengan rapi.</p>
+          <div class="skill-chips flex flex-wrap gap-2 text-[11px] mb-3">
+            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">Rakit dari nol</span>
+            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">Bongkar pasang</span>
+            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">Cable management</span>
+          </div>
+        </div>
+
+        <!-- Laptop (satu kartu) -->
+        <div class="skill-card metallic-card p-5 rounded-xl border-l-4 border-l-sky-500 reveal" data-level="advanced" tabindex="0">
+          <i data-lucide="laptop" class="text-sky-400"></i>
+          <h5 class="font-bold text-white">Perawatan &amp; Servis Laptop</h5>
+          <p class="skill-desc text-xs text-slate-400 mb-3">Perawatan laptop menyeluruh agar suhu stabil dan performa kembali optimal.</p>
+          <div class="skill-chips flex flex-wrap gap-2 text-[11px] mb-3">
+            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">Pembersihan debu &amp; kipas</span>
+            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">Ganti thermal paste</span>
+            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">Pasang &amp; upgrade RAM</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kategori 3: Office -->
+      <div class="flex items-center gap-3 mb-5 font-mono reveal">
+        <i data-lucide="briefcase" class="w-5 h-5 text-electric-cyan"></i>
+        <h4 class="text-lg font-bold">Office &amp; Produktivitas</h4>
+        <div class="flex-1 h-px bg-slate-800"></div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 font-mono text-sm">
+        <div class="skill-card metallic-card p-5 rounded-xl border-l-4 border-l-blue-500 reveal" data-level="advanced" tabindex="0">
+          <i data-lucide="file-text" class="text-blue-400"></i>
+          <h5 class="font-bold text-white">Microsoft Word</h5>
+          <p class="skill-desc text-xs text-slate-400 mb-3">Penulisan dokumen, laporan, dan karya ilmiah</p>
+        </div>
+
+        <div class="skill-card metallic-card p-5 rounded-xl border-l-4 border-l-green-500 reveal" data-level="advanced" tabindex="0">
+          <i data-lucide="file-spreadsheet" class="text-green-400"></i>
+          <h5 class="font-bold text-white">Microsoft Excel</h5>
+          <p class="skill-desc text-xs text-slate-400 mb-3">Pengolahan data, rumus, dan tabel</p>
+        </div>
+
+        <div class="skill-card metallic-card p-5 rounded-xl border-l-4 border-l-red-500 reveal" data-level="advanced" tabindex="0">
+          <i data-lucide="presentation" class="text-red-400"></i>
+          <h5 class="font-bold text-white">Microsoft PowerPoint</h5>
+          <p class="skill-desc text-xs text-slate-400 mb-3">Desain dan penyampaian presentasi</p>
+        </div>
+      </div>
+
+      <!-- Banner layanan -->
+      <div class="metallic-card rounded-2xl p-6 md:p-8 mt-12 border border-electric-cyan/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 reveal">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 flex-shrink-0 rounded-lg bg-electric-cyan/10 border border-electric-cyan/30 flex items-center justify-center text-electric-cyan">
+            <i data-lucide="life-buoy" class="w-6 h-6"></i>
+          </div>
+          <div class="font-mono">
+            <h5 class="text-lg font-bold text-white">Laptop panas, lemot, atau butuh rakit PC?</h5>
+            <p class="text-sm text-slate-400 mt-1">Konsultasi dulu lewat WhatsApp, saya siap bantu.</p>
+          </div>
+        </div>
+        <a href="https://wa.me/6282397031718?text=Halo%20Israel%2C%20saya%20ingin%20konsultasi%20soal%20laptop%2FPC."
+           target="_blank" rel="noopener"
+           class="electric-button font-mono px-6 py-3 rounded-lg font-semibold text-white flex items-center justify-center gap-2 w-full md:w-auto">
+          <i data-lucide="message-circle" class="w-4 h-4"></i>
+          <span>KONSULTASI SEKARANG</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ================= PROYEK ================= -->
+    <section id="projects" class="py-16 md:py-20 px-4 sm:px-6 max-w-7xl mx-auto scroll-mt-16">
+      <div class="mb-10 md:mb-12 border-b border-slate-800 pb-6 reveal">
+        <h2 class="text-xs font-mono text-electric-cyan tracking-widest uppercase mb-2">// 03. PORTOFOLIO PROYEK</h2>
+        <h3 class="text-2xl sm:text-3xl font-bold font-mono">Proyek Web &amp; Machine Learning</h3>
+      </div>
+
+      <div class="grid lg:grid-cols-12 gap-6 lg:gap-8 items-center metallic-card p-5 sm:p-8 rounded-2xl reveal">
+        <div class="lg:col-span-7 space-y-4 order-2 lg:order-1">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-electric-cyan/10 border border-electric-cyan/30 text-electric-cyan text-[10px] sm:text-xs font-mono">
+            COLLEGE PROJECT • MACHINE LEARNING
+          </div>
+
+          <h4 class="text-xl sm:text-2xl font-bold font-mono text-white">
+            Prediksi &amp; Visualisasi Rute Pergerakan Ikan Pari
+          </h4>
+
+          <p class="text-slate-300 text-sm leading-relaxed">
+            Pengembangan aplikasi berbasis web yang di-host secara <strong>Localhost</strong> untuk memprediksi serta memvisualisasikan rute pergerakan spasial ikan pari. Proyek ini menggunakan metode <strong>Supervised Learning</strong> dengan model algoritma <strong>Random Forest</strong> untuk akurasi analisis lintasan.
+          </p>
+
+          <div class="flex flex-wrap gap-2 font-mono text-xs pt-2">
+            <span class="px-3 py-1 rounded bg-slate-800 border border-slate-700 text-electric-cyan">Supervised Learning</span>
+            <span class="px-3 py-1 rounded bg-slate-800 border border-slate-700 text-electric-cyan">Random Forest Model</span>
+            <span class="px-3 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">Python</span>
+            <span class="px-3 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300">Localhost Web</span>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 order-1 lg:order-2">
+          <div class="rounded-xl overflow-hidden border border-slate-700 bg-slate-900 group relative">
+            <img src="pari-project.jpg" alt="Visualisasi Pergerakan Ikan Pari"
+                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1000&auto=format&fit=crop';"
+                 class="w-full h-52 sm:h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
+
+            <div class="absolute inset-0 bg-slate-950/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <span class="font-mono text-xs text-white bg-slate-900/90 px-3 py-1.5 rounded border border-electric-cyan">
+                Web Localhost Application
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= KONTAK ================= -->
+    <section id="contact" class="py-16 md:py-20 px-4 sm:px-6 max-w-7xl mx-auto scroll-mt-16">
+      <div class="metallic-card p-6 sm:p-10 rounded-2xl border border-electric-cyan/40 reveal">
+        <div class="max-w-3xl mx-auto text-center space-y-6">
+          <h3 class="text-2xl sm:text-3xl font-bold font-mono">Hubungi Saya &amp; Unduh CV</h3>
+          <p class="text-slate-300 text-sm leading-relaxed">
+            Saya terbuka untuk kesempatan magang, proyek pembuatan website, analisis Machine Learning, servis &amp; perakitan hardware, maupun kolaborasi profesional lainnya.
+          </p>
+
+          <div class="grid sm:grid-cols-2 gap-4 font-mono text-sm max-w-xl mx-auto text-left">
+            <a href="mailto:iy.amunau@gmail.com" class="p-4 rounded-xl bg-metallic-900/80 border border-slate-700 hover:border-electric-cyan flex items-center gap-3 transition-colors min-w-0">
+              <i data-lucide="mail" class="w-5 h-5 text-electric-cyan flex-shrink-0"></i>
+              <div class="min-w-0">
+                <p class="text-xs text-slate-400">Email</p>
+                <p class="text-white font-semibold truncate">iy.amunau@gmail.com</p>
+              </div>
+            </a>
+
+            <a href="https://wa.me/6282397031718" target="_blank" rel="noopener" class="p-4 rounded-xl bg-metallic-900/80 border border-slate-700 hover:border-electric-cyan flex items-center gap-3 transition-colors min-w-0">
+              <i data-lucide="phone" class="w-5 h-5 text-electric-cyan flex-shrink-0"></i>
+              <div class="min-w-0">
+                <p class="text-xs text-slate-400">Telepon / WhatsApp</p>
+                <p class="text-white font-semibold">082397031718</p>
+              </div>
+            </a>
+          </div>
+
+          <div class="pt-4">
+            <a href="CV Israel Amunau.pdf" download="CV_Israel_Yoeman_Amunau.pdf" target="_blank"
+               class="electric-button inline-flex items-center justify-center gap-3 px-6 sm:px-8 py-4 rounded-lg font-bold text-white font-mono w-full sm:w-auto text-sm sm:text-base">
+              <i data-lucide="file-down" class="w-5 h-5 flex-shrink-0"></i>
+              <span>UNDUH CURRICULUM VITAE (PDF)</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="border-t border-slate-800 py-8 px-4 text-center font-mono text-xs text-slate-500">
+      <p>© 2026 Israel Yoeman Amunau. "Hidup Harus Tetap Slay."</p>
+    </footer>
+
+  </div>
+
+  <button id="to-top" aria-label="Kembali ke atas"
+          class="fixed bottom-5 right-5 z-50 w-11 h-11 rounded-full electric-button text-white flex items-center justify-center opacity-0 pointer-events-none transition-opacity">
+    <i data-lucide="arrow-up" class="w-5 h-5"></i>
+  </button>
+
+  <!-- ================= SCRIPT ================= -->
+  <script>
+    /* ---------- 1. Susun ulang setiap kartu keahlian menjadi 2 lapisan ---------- */
+    const LEVELS = {
+      beginner: { n: 1, label: 'BEGINNER', color: '#f59e0b' },
+      advanced: { n: 2, label: 'ADVANCED', color: '#06b6d4' },
+      expert:   { n: 3, label: 'EXPERT',   color: '#10b981' },
+    };
+
+    document.querySelectorAll('.skill-card').forEach(card => {
+      const lv = LEVELS[card.dataset.level] || LEVELS.beginner;
+      card.style.setProperty('--c', lv.color);
+
+      // Ambil bahan dari markup yang kamu tulis
+      const iconSrc = card.querySelector(':scope > i');
+      const title   = card.querySelector(':scope > h5').textContent;
+      const desc    = card.querySelector(':scope > .skill-desc');
+      const chips   = card.querySelector(':scope > .skill-chips');
+      const iconName  = iconSrc.dataset.lucide;
+      const iconColor = iconSrc.className;
+
+      card.setAttribute('aria-label', title + ' - level ' + lv.label.toLowerCase());
+
+      const makeIcon = () => {
+        const i = document.createElement('i');
+        i.dataset.lucide = iconName;
+        i.className = iconColor;
+        return i;
+      };
+      const makeTitle = () => {
+        const h = document.createElement('h5');
+        h.className = 'font-bold text-white';
+        h.textContent = title;
+        return h;
+      };
+
+      // Lapisan depan: ikon + judul saja
+      const front = document.createElement('div');
+      front.className = 'skill-front';
+      front.append(makeIcon(), makeTitle());
+
+      // Lapisan belakang: judul + deskripsi (+ chip) + bar level
+      const back = document.createElement('div');
+      back.className = 'skill-back';
+
+      const head = document.createElement('div');
+      head.className = 'skill-back-head';
+      head.append(makeIcon(), makeTitle());
+
+      const segs = [1, 2, 3]
+        .map(i => `<span class="seg" data-on="${i <= lv.n}" style="transition-delay:${i * 120}ms"></span>`)
+        .join('');
+      const level = document.createElement('div');
+      level.className = 'level-wrap';
+      level.innerHTML = `
+        <div class="level-head"><span>LEVEL</span><strong>${lv.label}</strong></div>
+        <div class="level-bar">${segs}</div>`;
+
+      back.append(head, desc);
+      if (chips) back.append(chips);
+      back.append(level);
+
+      card.replaceChildren(front, back);
+    });
+
+    /* Ketuk untuk membuka/menutup (untuk HP & keyboard) */
+    const cards = document.querySelectorAll('.skill-card');
+    function toggleCard(card) {
+      const wasOpen = card.classList.contains('open');
+      cards.forEach(c => c.classList.remove('open'));
+      if (!wasOpen) card.classList.add('open');
+    }
+    cards.forEach(card => {
+      card.addEventListener('click', e => { e.stopPropagation(); toggleCard(card); });
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCard(card); }
+      });
+    });
+    document.addEventListener('click', () => cards.forEach(c => c.classList.remove('open')));
+
+    /* ---------- 2. Ikon Lucide (dipanggil SETELAH kartu disusun ulang) ---------- */
+    lucide.createIcons();
+
+    /* ---------- 3. Menu mobile ---------- */
+    const menuBtn = document.getElementById('menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const iconOpen = document.getElementById('icon-open');
+    const iconClose = document.getElementById('icon-close');
+
+    function toggleMenu(forceClose = false) {
+      const isOpen = !mobileMenu.classList.contains('hidden');
+      const shouldOpen = forceClose ? false : !isOpen;
+      mobileMenu.classList.toggle('hidden', !shouldOpen);
+      iconOpen.classList.toggle('hidden', shouldOpen);
+      iconClose.classList.toggle('hidden', !shouldOpen);
+    }
+    menuBtn.addEventListener('click', () => toggleMenu());
+    document.querySelectorAll('.mobile-link').forEach(l => l.addEventListener('click', () => toggleMenu(true)));
+
+    /* ---------- 4. Animasi muncul saat scroll ---------- */
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const el = e.target;
+          el.classList.add('show');
+          revealObserver.unobserve(el);
+          // Lepas kelas animasi setelah selesai agar hover/transisi kartu normal kembali
+          setTimeout(() => el.classList.remove('reveal', 'show'), 900);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    /* ---------- 5. Menyorot menu sesuai bagian yang dilihat ---------- */
+    const navLinks = document.querySelectorAll('.nav-link');
+    const spy = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
+        }
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    document.querySelectorAll('section[id]').forEach(s => spy.observe(s));
+
+    /* ---------- 6. Efek mengetik ---------- */
+    const roles = [
+      'Web Developer',
+      'Machine Learning Enthusiast',
+      'PC & Laptop Technician',
+      'Office Productivity (Word, Excel, PowerPoint)'
+    ];
+    const typingEl = document.getElementById('typing');
+    let roleIdx = 0, charIdx = 0, deleting = false;
+
+    function type() {
+      const current = roles[roleIdx];
+      typingEl.textContent = current.substring(0, charIdx);
+
+      if (!deleting && charIdx < current.length) {
+        charIdx++; setTimeout(type, 70);
+      } else if (!deleting && charIdx === current.length) {
+        deleting = true; setTimeout(type, 1400);
+      } else if (deleting && charIdx > 0) {
+        charIdx--; setTimeout(type, 35);
+      } else {
+        deleting = false;
+        roleIdx = (roleIdx + 1) % roles.length;
+        setTimeout(type, 300);
+      }
+    }
+    type();
+
+    /* ---------- 7. Tombol kembali ke atas ---------- */
+    const toTop = document.getElementById('to-top');
+    window.addEventListener('scroll', () => {
+      const show = window.scrollY > 500;
+      toTop.classList.toggle('opacity-0', !show);
+      toTop.classList.toggle('pointer-events-none', !show);
+    }, { passive: true });
+    toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    /* ---------- 8. Latar partikel ---------- */
+    const canvas = document.getElementById('lightning-canvas');
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.8;
+        this.vy = (Math.random() - 0.5) * 0.8;
+        this.radius = Math.random() * 1.5 + 0.5;
+        this.alpha = Math.random() * 0.5 + 0.2;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) this.reset();
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(6, 182, 212, ${this.alpha})`;
+        ctx.fill();
+      }
+    }
+
+    const isMobile = window.innerWidth < 768;
+    const particles = Array.from({ length: isMobile ? 22 : 45 }, () => new Particle());
+    const linkDist = isMobile ? 90 : 120;
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < linkDist) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(6, 182, 212, ${0.25 * (1 - dist / linkDist)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>
